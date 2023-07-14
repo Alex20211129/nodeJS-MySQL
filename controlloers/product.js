@@ -1,51 +1,66 @@
 import pool from "../db/connectdb.js";
 
-// const getAllProducts = async(req, res) => {
-//     try {
-//         const [results]= await pool.execute("SELECT * FROM `main`")
-//         res.send(results);
-//     } catch (error) {
-//         console.log(error);
-//         res.send(error.sqlMessage);
-//     }
-// }
-
 const getAllProducts = async (req, res) => {
-    let { sort,title, area, address, type, price } = req.query;
-    let queryObject = {}
+    let { sort, title, area, address, type, price } = req.query;
     let query =
-        "SELECT `main_id`,`main_title`,`area_name`,`main_address`,`price`,`rent_type_name` FROM `main` JOIN `area` ON `main_area` = `area_id`  JOIN `rent_type` ON`main_type` = `rent_type_id` "
+        "SELECT `main_id`,`main_title`,`area_name`,`main_address`,`price`,`rent_type_name` FROM `main` JOIN `area` ON `main_area` = `area_id`  JOIN `rent_type` ON`main_type` = `rent_type_id` ";
+    const queryObject  = {}
     if (title) {
-        queryObject.main_title = `main_title LIKE '%${title}%'`
+        queryObject.main_title = `%${title}%`
+    }
+    if (address) {
+        queryObject.main_address = `%${address}%`
     }
     if (area) {
         let splitArea = area.split(',')
         if (splitArea.length > 1) {
-            queryObject.main_area = `main_area IN (${splitArea.map(item=>`'${item}'`).join(',')})`
+            queryObject.main_area1 = splitArea[0];
+            queryObject.main_area2 = splitArea[1];
         } else {
-            queryObject.main_area = `main_area = '${area}'`
+            queryObject.main_area = area
         }
-    }
-    if (address) {
-        queryObject.main_address = `main_address LIKE '%${address}%'`
     }
     if (type) {
-        let splitType = type.split(',')
-        if (splitType.length > 1) {
-            queryObject.main_type = `main_type IN (${splitType.map(item => `'${item}'`).join(',')})`;
-        } else {
-            queryObject.main_type = `main_type = ${type}`;
-        }
+        queryObject.main_type = type
     }
     if (price) {
         let splitPrice = price.split('_')
-        queryObject.price = `price BETWEEN ${splitPrice[0]} AND ${splitPrice[1]}`
+        queryObject.price0 = splitPrice[0]
+        queryObject.price1 = splitPrice[1]
     }
-   
-    if(Object.keys(queryObject).length > 0){
-        query += "WHERE "
-        query += Object.keys(queryObject).map(key => `${queryObject[key]}`).join(" AND ")
+
+    if (Object.keys(queryObject).length > 0) {
+        query += "WHERE"
+        let Array = []
+        if (title) {
+            Array.push(" `main_title` LIKE ?")
+        }
+        if (address) {
+            Array.push(" `main_address` LIKE ?")
+        }
+        if (area) {
+            let splitArea = area.split(',')
+            if (splitArea.length > 1) {
+                let i = ""
+                splitArea.forEach(element => {
+                    i += '?'
+                });
+                let areas = i.split('')
+                Array.push(" `main_area` IN" + `(${areas})`)
+            } else {
+                Array.push(" `main_area` = ?")
+            }
+        }
+        if (type) {
+            Array.push(" `main_type` = ?")
+        }
+        if (price) {
+            Array.push(" `price` BETWEEN ? AND ?")
+        }
+        let queryString = Array.map(item => item).join(" AND")
+        query += queryString
     }
+    
     if (sort) {
         if (sort.includes('-')) {
             sort = sort.replace('-', '')
@@ -55,9 +70,8 @@ const getAllProducts = async (req, res) => {
         }
     }
     console.log(query);
-    
     try {
-        const [result] = await pool.execute(query);
+        const [result] = await pool.execute(query,Object.values(queryObject));
         if (result.length == 0) {
             return res.send("No product found");
         }
@@ -66,6 +80,7 @@ const getAllProducts = async (req, res) => {
         console.log(error);
         res.send(error.sqlMessage);
     }
+    
 };
 
 const getProduct = async(req, res) => {
