@@ -69,16 +69,15 @@ const getAllProducts = async (req, res) => {
             query += ` ORDER BY ${sort} desc`
         }
     }
-    console.log(query);
     try {
         const [result] = await pool.execute(query,Object.values(queryObject));
         if (result.length == 0) {
-            return res.send("No product found");
+            return res.status(200).send("No product found");
         }
-        res.send({count:result.length,result});
+        res.status(200).send({count:result.length,result});
     } catch (error) {
         console.log(error);
-        res.send(error.sqlMessage);
+        res.status(500).send(error.sqlMessage);
     }
     
 };
@@ -86,28 +85,78 @@ const getAllProducts = async (req, res) => {
 const getProduct = async(req, res) => {
     const { id } = req.params
     try {
-        const [result] = await pool.execute("SELECT * FROM `main` WHERE `main_id`=?", [id]);
+        const [result] = await pool.execute("SELECT `main_id`,`main_title`,`area_name`,`main_address`,`price`,`rent_type_name` FROM `main` JOIN `area` ON `main_area` = `area_id`  JOIN `rent_type` ON`main_type` = `rent_type_id` WHERE `main_id`=?", [id]);
         if (result.length == 0) {
-            return res.send("No product found");
+            return res.status(200).send("No product found");
         }
-        res.send(result);
+        res.status(200).send(result);
     } catch (error) {
         console.log(error);
-        res.send(error.sqlMessage);
+        res.status(500).send(error.sqlMessage);
     }
 };
 
 
-const createProduct = (req, res) => {
-    res.send("create product");
+const createProduct = async (req, res) => {
+    let insertSql = "INSERT INTO `main` (main_title,main_area,main_address,main_type,price) VALUES (?,?,?,?,?)"
+    let resultSql = "SELECT `main_id`,`main_title`,`area_name`,`main_address`,`price`,`rent_type_name` FROM `main` JOIN `area` ON `main_area` = `area_id`  JOIN `rent_type` ON`main_type` = `rent_type_id` WHERE `main_id`=?"
+    try {
+        const [ResultSetHeader] = await pool.execute(insertSql, Object.values(req.body));
+        const [result] = await pool.execute(resultSql, [ResultSetHeader.insertId]);
+        res.status(201).send(result);
+    } catch (error) {
+        console.log(error);
+        res.status(500).send(error.sqlMessage);
+    }
 };
 
-const updateProduct = (req, res) => {
-    res.send("update product");
+const updateProduct = async (req, res) => {
+    const { main_title, main_area, main_address, main_type, price } = req.body
+    let updateoption = []
+    if (main_title) {
+        updateoption.push(" `main_title`=? ")
+    }
+    if (main_area) {
+        updateoption.push(" `main_area`=? ")
+    }
+    if (main_address) {
+        updateoption.push(" `main_address`=? ")
+    }
+    if (main_type) {
+        updateoption.push(" `main_type`=? ")
+    }
+    if (price) {
+        updateoption.push(" `price`=? ")
+    }
+    let updateSql = "UPDATE `main` SET" + updateoption.toString() + " WHERE `main_id`=?"
+    let resultSql = "SELECT `main_id`,`main_title`,`area_name`,`main_address`,`price`,`rent_type_name` FROM `main` JOIN `area` ON `main_area` = `area_id`  JOIN `rent_type` ON`main_type` = `rent_type_id` WHERE `main_id`=?"
+    const sqlParams = Object.values(req.body)
+    sqlParams.push(req.params.id)
+    try {
+        const [ResultSetHeader] = await pool.execute(updateSql, sqlParams);
+        if (ResultSetHeader.affectedRows == 1) {
+            const [result] = await pool.execute(resultSql,[req.params.id]);
+            res.staus(204).send(result);
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(500).send(error.sqlMessage);
+    }
 };
 
-const deleteProduct = (req, res) => {
-    res.send("delete product");
+const deleteProduct = async (req, res) => {
+    let deleteSql = "DELETE FROM `main` WHERE `main_id`=?"
+    let resultSql = "SELECT `main_id`,`main_title`,`area_name`,`main_address`,`price`,`rent_type_name` FROM `main` JOIN `area` ON `main_area` = `area_id`  JOIN `rent_type` ON`main_type` = `rent_type_id`"
+    try {
+        const [ResultSetHeader] = await pool.execute(deleteSql, [req.params.id]);
+        if (ResultSetHeader.affectedRows == 1) {
+            const [result] = await pool.execute(resultSql);
+            res.staus(204).send({count:result.length,result});
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(500).send(error.sqlMessage);
+    }
 };
 
 export {

@@ -8,10 +8,9 @@ import {getAllProducts,
     
 const productRouter = express.Router();
 
-productRouter.route('/').get(getAllProducts);
-productRouter.route('/:id').get(getProduct);
+productRouter.route('/').get(getAllProducts).post(createProduct);
+productRouter.route('/:id').get(getProduct).patch(updateProduct).delete(deleteProduct);
 
-productRouter.route('/').post(createProduct).patch(updateProduct).delete(deleteProduct);
 
 
 export default productRouter;

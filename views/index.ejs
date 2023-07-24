@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL test</title>
+</head>
+<body>
+    <h1 style="text-align:center">這是一個SQL練習網站</h1>
+    <div>
+        <form id="form">
+            <input type="checkbox" id="99" name="area_name" value="99"><label>東區</label>
+            <input type="checkbox" id="98" name="area_name" value="98"><label>中區</label>
+            <button for=form type="submit" id="submit">送出</button>
+        </form>
+    </div>
+    <div style="display: flex; justify-content: center;">
+        <h3>筆數: <%= data.count %></h3>
+    </div>
+    <div style="display: flex; justify-content: center;">
+        <table style="width: 80%; border: 1px black solid;">
+            <tr>
+                <th>標題</th>
+                <th>地區</th>
+                <th>地址</th>
+                <th>價格</th>
+                <th>類型</th>
+            </tr>
+            <% data.result.forEach(item=> { %>
+                <tr>
+                    <td style="text-align: left; border: 1px black solid;"><%= item.main_title %></td>
+                    <td style="text-align: center; border: 1px black solid;"><%= item.area_name %></td>
+                    <td style="text-align: center; border: 1px black solid;"><%= item.main_address %></td>
+                    <td style="text-align: center; border: 1px black solid;"><%= item.price %></td>
+                    <td style="text-align: center; border: 1px black solid;"><%= item.rent_type_name %></td>
+                </tr>
+            <% }) %>
+        </table>
+    </div>
+
+</body>
+<script>
+    document.getElementById("submit").onclick = (e) =>{
+        e.preventDefault()
+        console.log(e.target.form)
+    }
+</script>
+</html>
